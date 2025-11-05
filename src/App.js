@@ -79,6 +79,7 @@ export default function UnifiedNotesApp() {
         const month = parts[0].padStart(2, '0');
         const day = parts[1].padStart(2, '0');
         let year = parts[2];
+        // Handle 2-digit years
         if (year.length === 2) {
           const currentYear = new Date().getFullYear();
           const currentCentury = Math.floor(currentYear / 100) * 100;
@@ -222,6 +223,13 @@ export default function UnifiedNotesApp() {
     setEditingText('');
   };
 
+  const clearFilters = () => {
+    setFilterType('all');
+    setFilterTag('');
+    setFilterStatus('all');
+    setSortBy('recent');
+  };
+
   const getAllTags = () => {
     const tagSet = new Set();
     items.forEach(item => {
@@ -231,16 +239,19 @@ export default function UnifiedNotesApp() {
   };
 
   const renderItemText = (item) => {
+    // Check if the text contains bullet points
     const lines = item.text.split('\n');
     const hasBullets = lines.some(line => line.trim().startsWith('- '));
     
     if (hasBullets) {
+      // Process line by line for bullets
       return (
         <div>
           {lines.map((line, lineIndex) => {
             const trimmedLine = line.trim();
             
             if (trimmedLine.startsWith('- ')) {
+              // This is a bullet point
               const bulletContent = trimmedLine.substring(2);
               return (
                 <div key={`line-${lineIndex}`} className="flex items-start gap-2 ml-4 my-1">
@@ -249,14 +260,17 @@ export default function UnifiedNotesApp() {
                 </div>
               );
             } else if (trimmedLine) {
+              // Regular line
               return <div key={`line-${lineIndex}`} className="my-1">{processLine(trimmedLine, `line-${lineIndex}`)}</div>;
             } else {
+              // Empty line
               return <div key={`line-${lineIndex}`} className="h-4"></div>;
             }
           })}
         </div>
       );
     } else {
+      // No bullets - check if there are line breaks
       if (lines.length > 1) {
         return (
           <div>
@@ -270,6 +284,7 @@ export default function UnifiedNotesApp() {
           </div>
         );
       } else {
+        // Single line, process normally
         return processLine(item.text, 'text');
       }
     }
@@ -323,6 +338,7 @@ export default function UnifiedNotesApp() {
     
     const processItalicAndUnderline = (text, prefix) => {
       const segments = [];
+      // Match _text_ for underline and *text* for italic
       const formatRegex = /(\*|_)([^\*_]+?)\1/g;
       let lastIndex = 0;
       let match;
@@ -333,12 +349,14 @@ export default function UnifiedNotesApp() {
         }
         
         if (match[1] === '*') {
+          // Italic
           segments.push(
             <em key={`${prefix}-i${match.index}`} className="italic">
               {match[2]}
             </em>
           );
         } else if (match[1] === '_') {
+          // Underline
           segments.push(
             <span key={`${prefix}-u${match.index}`} className="underline">
               {match[2]}
@@ -358,6 +376,7 @@ export default function UnifiedNotesApp() {
     
     const processUrls = (text, prefix) => {
       const segments = [];
+      // Match URLs (http://, https://, www., or domain.com patterns)
       const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g;
       let lastIndex = 0;
       let match;
@@ -370,6 +389,7 @@ export default function UnifiedNotesApp() {
         let url = match[0];
         let href = url;
         
+        // Add https:// if not present
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
           href = 'https://' + url;
         }
@@ -424,6 +444,7 @@ export default function UnifiedNotesApp() {
           const month = dateParts[0].padStart(2, '0');
           const day = dateParts[1].padStart(2, '0');
           let year = dateParts[2];
+          // Handle 2-digit years
           if (year.length === 2) {
             const currentYear = new Date().getFullYear();
             const currentCentury = Math.floor(currentYear / 100) * 100;
@@ -631,6 +652,7 @@ export default function UnifiedNotesApp() {
                 <option value="notes">Notes</option>
                 <option value="todos">Todos</option>
               </select>
+              
               <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 text-sm">
                 <option value="">All Tags</option>
                 {getAllTags().map(tag => (
@@ -651,6 +673,13 @@ export default function UnifiedNotesApp() {
                 <option value="dueDate">Due Date</option>
               </select>
             </div>
+
+            <button
+              onClick={clearFilters}
+              className="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-slate-300 rounded-lg transition-all"
+            >
+              Clear All Filters
+            </button>
           </div>
         </div>
 
