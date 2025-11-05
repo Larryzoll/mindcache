@@ -106,7 +106,7 @@ export default function UnifiedNotesApp() {
   const [activePane, setActivePane] = useState('notes');
   const [loading, setLoading] = useState(true);
   const [customTagColors, setCustomTagColors] = useState({});
-  const [editingTagColor, setEditingTagColor] = useState(null);
+  const [editingTagColor, setEditingTagColor] = useState(null); // Will store unique key like "tagName-keyPrefix-index"
   const inputRef = useRef(null);
 
   const tagColors = [
@@ -655,24 +655,25 @@ export default function UnifiedNotesApp() {
       if (matchItem.type === 'tag') {
         const tagColor = getTagColor(matchItem.match[1]);
         const tagName = matchItem.match[1];
+        const uniqueTagKey = `${keyPrefix}-tag-${matchItem.index}`;
         parts.push(
           <span 
-            key={`${keyPrefix}-tag-${matchItem.index}`} 
+            key={uniqueTagKey} 
             className={`${tagColor} px-2.5 py-1 rounded-lg font-semibold text-sm border inline-block mx-1 cursor-pointer hover:opacity-80 transition-opacity relative group`}
             onContextMenu={(e) => {
               e.preventDefault();
-              setEditingTagColor(editingTagColor === tagName ? null : tagName);
+              setEditingTagColor(editingTagColor === uniqueTagKey ? null : uniqueTagKey);
             }}
             onClick={(e) => {
               if (e.shiftKey) {
                 e.preventDefault();
-                setEditingTagColor(editingTagColor === tagName ? null : tagName);
+                setEditingTagColor(editingTagColor === uniqueTagKey ? null : uniqueTagKey);
               }
             }}
             title="Right-click or Shift+Click to change color"
           >
             #{tagName}
-            {editingTagColor === tagName && (
+            {editingTagColor === uniqueTagKey && (
               <div className="absolute z-50 mt-1 p-2 bg-white rounded-lg shadow-2xl border-2 border-slate-300 flex gap-1 left-0 top-full">
                 {tagColors.map((color, index) => (
                   <button
