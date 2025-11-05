@@ -714,13 +714,16 @@ export default function UnifiedNotesApp() {
         <div className="p-4 md:p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50/50 to-slate-50/50">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
-            <button
-              onClick={handleSignOut}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
-              title="Sign out"
-            >
-              <LogOut size={20} />
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 hidden md:inline">{user.email}</span>
+              <button
+                onClick={handleSignOut}
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+                title="Sign out"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
           </div>
           <p className="text-xs md:text-sm text-gray-600 mb-3">
             <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">- bullets</span>
