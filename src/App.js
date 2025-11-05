@@ -154,10 +154,9 @@ export default function UnifiedNotesApp() {
     if (user) {
       fetchNotes();
       
-      // Load custom tag colors from localStorage
-      const savedColors = localStorage.getItem(`tagColors_${user.id}`);
-      if (savedColors) {
-        setCustomTagColors(JSON.parse(savedColors));
+      // Load custom tag colors from Supabase user metadata
+      if (user.user_metadata?.tag_colors) {
+        setCustomTagColors(user.user_metadata.tag_colors);
       }
       
       const channel = supabase
@@ -283,11 +282,16 @@ export default function UnifiedNotesApp() {
     setItems([]);
   };
 
-  const setCustomTagColor = (tag, colorIndex) => {
+  const setCustomTagColor = async (tag, colorIndex) => {
     const newColors = { ...customTagColors, [tag]: colorIndex };
     setCustomTagColors(newColors);
-    // Save to localStorage for persistence
-    localStorage.setItem(`tagColors_${user.id}`, JSON.stringify(newColors));
+    // Save to Supabase user metadata for cross-device sync
+    const { error } = await supabase.auth.updateUser({
+      data: { tag_colors: newColors }
+    });
+    if (error) {
+      console.error('Error saving tag colors:', error);
+    }
   };
   const parseItem = (text) => {
     const isTodo = text.trim().startsWith('[]') || text.trim().startsWith('[x]');
@@ -772,11 +776,11 @@ export default function UnifiedNotesApp() {
         <div className="p-4 md:p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50/50 to-slate-50/50">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 hidden md:inline">{user.email}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs md:text-sm text-gray-600 truncate max-w-[120px] md:max-w-none">{user.email}</span>
               <button
                 onClick={handleSignOut}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all flex-shrink-0"
                 title="Sign out"
               >
                 <LogOut size={20} />
