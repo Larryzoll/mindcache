@@ -419,7 +419,13 @@ export default function UnifiedNotesApp() {
 
   const startEditingItem = (item) => {
     setEditingItemId(item.id);
-    setEditingText(item.text);
+    // Reconstruct the full text with brackets for todos
+    let fullText = item.text;
+    if (item.type === 'todo') {
+      const bracket = item.status === 'completed' ? '[x]' : '[]';
+      fullText = `${bracket} ${item.text}`;
+    }
+    setEditingText(fullText);
   };
 
   const cancelEditingItem = () => {
