@@ -479,7 +479,7 @@ export default function UnifiedNotesApp() {
 
   // Copy your entire renderItemText and processLine functions from your working App.js
   // These are the markdown/formatting functions - they're exactly the same
-  const renderItemText = (item) => {
+  const renderItemText = (item, pane = 'main') => {
     const lines = item.text.split('\n');
     const hasBullets = lines.some(line => line.trim().startsWith('- '));
     
@@ -494,11 +494,11 @@ export default function UnifiedNotesApp() {
               return (
                 <div key={`line-${lineIndex}`} className="flex items-start gap-2 ml-4 my-1">
                   <span className="text-gray-600 mt-0.5">•</span>
-                  <span className="flex-1">{processLine(bulletContent, `bullet-${lineIndex}`)}</span>
+                  <span className="flex-1">{processLine(bulletContent, `${pane}-bullet-${lineIndex}`)}</span>
                 </div>
               );
             } else if (trimmedLine) {
-              return <div key={`line-${lineIndex}`} className="my-1">{processLine(trimmedLine, `line-${lineIndex}`)}</div>;
+              return <div key={`line-${lineIndex}`} className="my-1">{processLine(trimmedLine, `${pane}-line-${lineIndex}`)}</div>;
             } else {
               return <div key={`line-${lineIndex}`} className="h-4"></div>;
             }
@@ -511,7 +511,7 @@ export default function UnifiedNotesApp() {
           <div>
             {lines.map((line, lineIndex) => {
               if (line.trim()) {
-                return <div key={`line-${lineIndex}`}>{processLine(line, `line-${lineIndex}`)}</div>;
+                return <div key={`line-${lineIndex}`}>{processLine(line, `${pane}-line-${lineIndex}`)}</div>;
               } else {
                 return <div key={`line-${lineIndex}`} className="h-4"></div>;
               }
@@ -519,7 +519,7 @@ export default function UnifiedNotesApp() {
           </div>
         );
       } else {
-        return processLine(item.text, 'text');
+        return processLine(item.text, `${pane}-text`);
       }
     }
   };
@@ -864,7 +864,7 @@ export default function UnifiedNotesApp() {
                       />
                     ) : (
                       <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
-                        {renderItemText(item)}
+                        {renderItemText(item, `left-${item.id}`)}
                       </p>
                     )}
                   </div>
@@ -967,7 +967,7 @@ export default function UnifiedNotesApp() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
-                      {renderItemText(item)}
+                      {renderItemText(item, `right-${item.id}`)}
                     </p>
                   </div>
                 </div>
