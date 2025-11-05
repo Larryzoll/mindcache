@@ -912,18 +912,21 @@ export default function UnifiedNotesApp() {
           {/* Tag Color Settings */}
           {getAllTags().length > 0 && (
             <div className="mb-6 p-4 bg-white/80 rounded-lg border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Tag Colors</h3>
-              <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Tag Colors (click tag to change)</h3>
+              <div className="flex flex-wrap gap-2">
                 {getAllTags().map(tag => {
                   const currentColor = getTagColor(tag);
                   const isEditing = editingTagColor === tag;
                   return (
-                    <div key={tag} className="flex items-center justify-between">
-                      <span className={`${currentColor} px-2.5 py-1 rounded-lg font-semibold text-sm border`}>
+                    <div key={tag} className="relative">
+                      <button
+                        onClick={() => setEditingTagColor(isEditing ? null : tag)}
+                        className={`${currentColor} px-2.5 py-1 rounded-lg font-semibold text-sm border hover:opacity-80 transition-opacity cursor-pointer`}
+                      >
                         #{tag}
-                      </span>
-                      {isEditing ? (
-                        <div className="flex gap-1 flex-wrap">
+                      </button>
+                      {isEditing && (
+                        <div className="absolute z-10 mt-1 p-2 bg-white rounded-lg shadow-xl border-2 border-slate-300 flex gap-1">
                           {tagColors.map((color, index) => (
                             <button
                               key={index}
@@ -931,24 +934,11 @@ export default function UnifiedNotesApp() {
                                 setCustomTagColor(tag, index);
                                 setEditingTagColor(null);
                               }}
-                              className={`${color} w-6 h-6 rounded border-2 hover:scale-110 transition-transform`}
+                              className={`${color} w-7 h-7 rounded border-2 hover:scale-110 transition-transform`}
                               title={`Color ${index + 1}`}
                             />
                           ))}
-                          <button
-                            onClick={() => setEditingTagColor(null)}
-                            className="ml-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
-                          >
-                            Cancel
-                          </button>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => setEditingTagColor(tag)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Change Color
-                        </button>
                       )}
                     </div>
                   );
