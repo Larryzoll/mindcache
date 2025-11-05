@@ -1,7 +1,102 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter } from 'lucide-react';
+import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
+console.log('Environment check:', {
+  url: process.env.REACT_APP_SUPABASE_URL,
+  hasKey: !!process.env.REACT_APP_SUPABASE_ANON_KEY
+});
+
+const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL,
+  process.env.REACT_APP_SUPABASE_ANON_KEY
+);
+
+function Auth({ onAuth }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onAuth(data.user);
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user) {
+          alert('Check your email to confirm your account!');
+          setIsLogin(true);
+        }
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent mb-8 text-center">
+          MindCache
+        </h1>
+        
+        <form onSubmit={handleAuth} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-orange-600 text-white font-semibold rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+          </button>
+        </form>
+
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="w-full mt-4 text-sm text-gray-600 hover:text-gray-800"
+        >
+          {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+        </button>
+      </div>
+    </div>
+  );
+}
 export default function UnifiedNotesApp() {
+  const [user, setUser] = useState(null);
   const [items, setItems] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -14,6 +109,7 @@ export default function UnifiedNotesApp() {
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [activePane, setActivePane] = useState('notes');
+  const [loading, setLoading] = useState(true);
   const inputRef = useRef(null);
 
   const tagColors = [
@@ -37,17 +133,150 @@ export default function UnifiedNotesApp() {
     return tagColors[Math.abs(hash) % tagColors.length];
   };
 
+  // Auth check
   useEffect(() => {
-    const saved = localStorage.getItem('unifiedNotes');
-    if (saved) {
-      setItems(JSON.parse(saved));
-    }
+    console.log('Auth check running...');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Session check:', { hasSession: !!session, user: session?.user?.email });
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', { event: _event, hasUser: !!session?.user });
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  // Fetch notes and subscribe to changes
   useEffect(() => {
-    localStorage.setItem('unifiedNotes', JSON.stringify(items));
-  }, [items]);
+    if (user) {
+      fetchNotes();
+      
+      const channel = supabase
+        .channel('notes-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'notes', filter: `user_id=eq.${user.id}` },
+          () => fetchNotes()
+        )
+        .subscribe();
 
+      return () => supabase.removeChannel(channel);
+    }
+  }, [user]);
+
+  const fetchNotes = async () => {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching notes:', error);
+    } else {
+      const formattedNotes = data.map(note => ({
+        id: note.id,
+        text: note.text,
+        type: note.type,
+        status: note.status,
+        tags: note.tags ? note.tags.split(',').filter(t => t) : [],
+        dueDate: note.due_date,
+        timestamp: note.created_at
+      }));
+      setItems(formattedNotes);
+    }
+  };
+
+  const addNote = async () => {
+    const parsed = parseItem(currentInput);
+    
+    const { error } = await supabase
+      .from('notes')
+      .insert([{
+        user_id: user.id,
+        text: parsed.text,
+        type: parsed.type,
+        status: parsed.status,
+        tags: parsed.tags.join(','),
+        due_date: parsed.dueDate
+      }]);
+    
+    if (error) {
+      console.error('Error adding note:', error);
+    } else {
+      setCurrentInput('');
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+      }
+      fetchNotes();
+    }
+  };
+
+  const toggleTodo = async (id) => {
+    const item = items.find(i => i.id === id);
+    if (!item || item.type !== 'todo') return;
+
+    const newStatus = item.status === 'completed' ? 'incomplete' : 'completed';
+    
+    const { error } = await supabase
+      .from('notes')
+      .update({ status: newStatus })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error toggling todo:', error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  const deleteItem = async (id) => {
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting note:', error);
+    } else {
+      if (editingItemId === id) {
+        setEditingItemId(null);
+        setEditingText('');
+      }
+      fetchNotes();
+    }
+  };
+
+  const saveEditedItem = async (id) => {
+    const parsed = parseItem(editingText);
+    
+    const { error } = await supabase
+      .from('notes')
+      .update({
+        text: parsed.text,
+        type: parsed.type,
+        status: parsed.status,
+        tags: parsed.tags.join(','),
+        due_date: parsed.dueDate
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating note:', error);
+    } else {
+      setEditingItemId(null);
+      setEditingText('');
+      fetchNotes();
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setItems([]);
+  };
   const parseItem = (text) => {
     const isTodo = text.trim().startsWith('[]') || text.trim().startsWith('[x]');
     const isCompleted = text.trim().startsWith('[x]');
@@ -79,7 +308,6 @@ export default function UnifiedNotesApp() {
         const month = parts[0].padStart(2, '0');
         const day = parts[1].padStart(2, '0');
         let year = parts[2];
-        // Handle 2-digit years
         if (year.length === 2) {
           const currentYear = new Date().getFullYear();
           const currentCentury = Math.floor(currentYear / 100) * 100;
@@ -90,13 +318,11 @@ export default function UnifiedNotesApp() {
     }
     
     return {
-      id: Date.now(),
       text: displayText,
       type: isTodo ? 'todo' : 'note',
       status: isTodo ? (isCompleted ? 'completed' : 'incomplete') : null,
       tags: tags,
-      dueDate: dueDate,
-      timestamp: new Date().toISOString()
+      dueDate: dueDate
     };
   };
 
@@ -175,47 +401,13 @@ export default function UnifiedNotesApp() {
     
     if (e.key === 'Enter' && !e.shiftKey && !showAutocomplete && currentInput.trim()) {
       e.preventDefault();
-      const newItem = parseItem(currentInput);
-      setItems([...items, newItem]);
-      setCurrentInput('');
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-      }
-    }
-  };
-
-  const toggleTodo = (id) => {
-    setItems(items.map(item => {
-      if (item.id === id && item.type === 'todo') {
-        const newStatus = item.status === 'completed' ? 'incomplete' : 'completed';
-        return { ...item, status: newStatus };
-      }
-      return item;
-    }));
-  };
-
-  const deleteItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
-    if (editingItemId === id) {
-      setEditingItemId(null);
-      setEditingText('');
+      addNote();
     }
   };
 
   const startEditingItem = (item) => {
     setEditingItemId(item.id);
     setEditingText(item.text);
-  };
-
-  const saveEditedItem = (id) => {
-    const updatedItem = parseItem(editingText);
-    setItems(items.map(item => 
-      item.id === id 
-        ? { ...updatedItem, id: item.id, timestamp: item.timestamp }
-        : item
-    ));
-    setEditingItemId(null);
-    setEditingText('');
   };
 
   const cancelEditingItem = () => {
@@ -238,20 +430,48 @@ export default function UnifiedNotesApp() {
     return Array.from(tagSet).sort();
   };
 
+  const getFilteredItems = () => {
+    let filtered = items.filter(item => {
+      if (filterType === 'notes' && item.type !== 'note') return false;
+      if (filterType === 'todos' && item.type !== 'todo') return false;
+      if (filterTag && !item.tags.includes(filterTag)) return false;
+      if (filterStatus === 'completed' && item.status !== 'completed') return false;
+      if (filterStatus === 'incomplete' && item.status !== 'incomplete') return false;
+      return true;
+    });
+
+    if (sortBy === 'dueDate') {
+      filtered = [...filtered].sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+    } else {
+      filtered = [...filtered].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    }
+
+    return filtered;
+  };
+
+  const autoResize = (el) => {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  };
+
+  // Copy your entire renderItemText and processLine functions from your working App.js
+  // These are the markdown/formatting functions - they're exactly the same
   const renderItemText = (item) => {
-    // Check if the text contains bullet points
     const lines = item.text.split('\n');
     const hasBullets = lines.some(line => line.trim().startsWith('- '));
     
     if (hasBullets) {
-      // Process line by line for bullets
       return (
         <div>
           {lines.map((line, lineIndex) => {
             const trimmedLine = line.trim();
             
             if (trimmedLine.startsWith('- ')) {
-              // This is a bullet point
               const bulletContent = trimmedLine.substring(2);
               return (
                 <div key={`line-${lineIndex}`} className="flex items-start gap-2 ml-4 my-1">
@@ -260,17 +480,14 @@ export default function UnifiedNotesApp() {
                 </div>
               );
             } else if (trimmedLine) {
-              // Regular line
               return <div key={`line-${lineIndex}`} className="my-1">{processLine(trimmedLine, `line-${lineIndex}`)}</div>;
             } else {
-              // Empty line
               return <div key={`line-${lineIndex}`} className="h-4"></div>;
             }
           })}
         </div>
       );
     } else {
-      // No bullets - check if there are line breaks
       if (lines.length > 1) {
         return (
           <div>
@@ -284,7 +501,6 @@ export default function UnifiedNotesApp() {
           </div>
         );
       } else {
-        // Single line, process normally
         return processLine(item.text, 'text');
       }
     }
@@ -338,7 +554,6 @@ export default function UnifiedNotesApp() {
     
     const processItalicAndUnderline = (text, prefix) => {
       const segments = [];
-      // Match _text_ for underline and *text* for italic
       const formatRegex = /(\*|_)([^\*_]+?)\1/g;
       let lastIndex = 0;
       let match;
@@ -349,14 +564,12 @@ export default function UnifiedNotesApp() {
         }
         
         if (match[1] === '*') {
-          // Italic
           segments.push(
             <em key={`${prefix}-i${match.index}`} className="italic">
               {match[2]}
             </em>
           );
         } else if (match[1] === '_') {
-          // Underline
           segments.push(
             <span key={`${prefix}-u${match.index}`} className="underline">
               {match[2]}
@@ -376,7 +589,6 @@ export default function UnifiedNotesApp() {
     
     const processUrls = (text, prefix) => {
       const segments = [];
-      // Match URLs (http://, https://, www., or domain.com patterns)
       const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g;
       let lastIndex = 0;
       let match;
@@ -389,7 +601,6 @@ export default function UnifiedNotesApp() {
         let url = match[0];
         let href = url;
         
-        // Add https:// if not present
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
           href = 'https://' + url;
         }
@@ -444,7 +655,6 @@ export default function UnifiedNotesApp() {
           const month = dateParts[0].padStart(2, '0');
           const day = dateParts[1].padStart(2, '0');
           let year = dateParts[2];
-          // Handle 2-digit years
           if (year.length === 2) {
             const currentYear = new Date().getFullYear();
             const currentCentury = Math.floor(currentYear / 100) * 100;
@@ -476,37 +686,26 @@ export default function UnifiedNotesApp() {
     return parts;
   };
 
-  const getFilteredItems = () => {
-    let filtered = items.filter(item => {
-      if (filterType === 'notes' && item.type !== 'note') return false;
-      if (filterType === 'todos' && item.type !== 'todo') return false;
-      if (filterTag && !item.tags.includes(filterTag)) return false;
-      if (filterStatus === 'completed' && item.status !== 'completed') return false;
-      if (filterStatus === 'incomplete' && item.status !== 'incomplete') return false;
-      return true;
-    });
+  // Loading/Auth check
+  console.log('Render check:', { loading, hasUser: !!user });
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
+        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
-    if (sortBy === 'dueDate') {
-      filtered = [...filtered].sort((a, b) => {
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-    } else {
-      filtered = [...filtered].sort((a, b) => b.id - a.id);
-    }
+  if (!user) {
+    console.log('No user, showing Auth component');
+    return <Auth onAuth={setUser} />;
+  }
 
-    return filtered;
-  };
-
-  const autoResize = (el) => {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  };
-
-  return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
+  // Part 4 will be the return statement with all the JSX
+  return ( <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
       <div className="md:hidden fixed top-4 right-4 z-50 flex gap-2">
         <button
           onClick={() => setActivePane('notes')}
@@ -524,7 +723,16 @@ export default function UnifiedNotesApp() {
 
       <div className={`w-full md:w-1/2 bg-white/90 backdrop-blur-sm border-r border-slate-200 flex flex-col shadow-xl ${activePane === 'notes' ? 'block' : 'hidden md:flex'}`}>
         <div className="p-4 md:p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50/50 to-slate-50/50">
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent mb-2">MindCache</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+              title="Sign out"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
           <p className="text-xs md:text-sm text-gray-600 mb-3">
             <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">- bullets</span>
           </p>
@@ -572,7 +780,7 @@ export default function UnifiedNotesApp() {
             </div>
           ) : (
             <div className="space-y-1.5">
-              {[...items].reverse().map(item => (
+              {items.map(item => (
                 <div key={item.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-lg group border border-transparent hover:border-slate-200">
                   {item.type === 'todo' && (
                     <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
