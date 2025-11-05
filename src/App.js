@@ -648,9 +648,40 @@ export default function UnifiedNotesApp() {
       
       if (matchItem.type === 'tag') {
         const tagColor = getTagColor(matchItem.match[1]);
+        const tagName = matchItem.match[1];
         parts.push(
-          <span key={`${keyPrefix}-tag-${matchItem.index}`} className={`${tagColor} px-2.5 py-1 rounded-lg font-semibold text-sm border inline-block mx-1`}>
-            #{matchItem.match[1]}
+          <span 
+            key={`${keyPrefix}-tag-${matchItem.index}`} 
+            className={`${tagColor} px-2.5 py-1 rounded-lg font-semibold text-sm border inline-block mx-1 cursor-pointer hover:opacity-80 transition-opacity relative group`}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setEditingTagColor(editingTagColor === tagName ? null : tagName);
+            }}
+            onClick={(e) => {
+              if (e.shiftKey) {
+                e.preventDefault();
+                setEditingTagColor(editingTagColor === tagName ? null : tagName);
+              }
+            }}
+            title="Right-click or Shift+Click to change color"
+          >
+            #{tagName}
+            {editingTagColor === tagName && (
+              <div className="absolute z-50 mt-1 p-2 bg-white rounded-lg shadow-2xl border-2 border-slate-300 flex gap-1 left-0 top-full">
+                {tagColors.map((color, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCustomTagColor(tagName, index);
+                      setEditingTagColor(null);
+                    }}
+                    className={`${color} w-7 h-7 rounded border-2 hover:scale-110 transition-transform`}
+                    title={`Color ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </span>
         );
       } else if (matchItem.type === 'date') {
@@ -909,44 +940,6 @@ export default function UnifiedNotesApp() {
             {getFilteredItems().length} of {items.length}
           </div>
 
-          {/* Tag Color Settings */}
-          {getAllTags().length > 0 && (
-            <div className="mb-6 p-4 bg-white/80 rounded-lg border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Tag Colors (click tag to change)</h3>
-              <div className="flex flex-wrap gap-2">
-                {getAllTags().map(tag => {
-                  const currentColor = getTagColor(tag);
-                  const isEditing = editingTagColor === tag;
-                  return (
-                    <div key={tag} className="relative">
-                      <button
-                        onClick={() => setEditingTagColor(isEditing ? null : tag)}
-                        className={`${currentColor} px-2.5 py-1 rounded-lg font-semibold text-sm border hover:opacity-80 transition-opacity cursor-pointer`}
-                      >
-                        #{tag}
-                      </button>
-                      {isEditing && (
-                        <div className="absolute z-10 mt-1 p-2 bg-white rounded-lg shadow-xl border-2 border-slate-300 flex gap-1">
-                          {tagColors.map((color, index) => (
-                            <button
-                              key={index}
-                              onClick={() => {
-                                setCustomTagColor(tag, index);
-                                setEditingTagColor(null);
-                              }}
-                              className={`${color} w-7 h-7 rounded border-2 hover:scale-110 transition-transform`}
-                              title={`Color ${index + 1}`}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
           {getFilteredItems().length === 0 ? (
             <div className="text-center text-gray-400 mt-16">
               <Search size={48} className="mx-auto mb-4 opacity-40" />
