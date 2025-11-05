@@ -105,6 +105,8 @@ export default function UnifiedNotesApp() {
   const [editingText, setEditingText] = useState('');
   const [activePane, setActivePane] = useState('notes');
   const [loading, setLoading] = useState(true);
+  const [customTagColors, setCustomTagColors] = useState({});
+  const [editingTagColor, setEditingTagColor] = useState(null);
   const inputRef = useRef(null);
 
   const tagColors = [
@@ -121,6 +123,11 @@ export default function UnifiedNotesApp() {
   ];
 
   const getTagColor = (tag) => {
+    // Check if there's a custom color set for this tag
+    if (customTagColors[tag] !== undefined) {
+      return tagColors[customTagColors[tag]];
+    }
+    // Otherwise use the hash-based color
     let hash = 0;
     for (let i = 0; i < tag.length; i++) {
       hash = tag.charCodeAt(i) + ((hash << 5) - hash);
@@ -146,6 +153,12 @@ export default function UnifiedNotesApp() {
   useEffect(() => {
     if (user) {
       fetchNotes();
+      
+      // Load custom tag colors from localStorage
+      const savedColors = localStorage.getItem(`tagColors_${user.id}`);
+      if (savedColors) {
+        setCustomTagColors(JSON.parse(savedColors));
+      }
       
       const channel = supabase
         .channel('notes-changes')
@@ -268,6 +281,13 @@ export default function UnifiedNotesApp() {
     await supabase.auth.signOut();
     setUser(null);
     setItems([]);
+  };
+
+  const setCustomTagColor = (tag, colorIndex) => {
+    const newColors = { ...customTagColors, [tag]: colorIndex };
+    setCustomTagColors(newColors);
+    // Save to localStorage for persistence
+    localStorage.setItem(`tagColors_${user.id}`, JSON.stringify(newColors));
   };
   const parseItem = (text) => {
     const isTodo = text.trim().startsWith('[]') || text.trim().startsWith('[x]');
@@ -888,6 +908,54 @@ export default function UnifiedNotesApp() {
             <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-orange-600 rounded-full"></div>
             {getFilteredItems().length} of {items.length}
           </div>
+
+          {/* Tag Color Settings */}
+          {getAllTags().length > 0 && (
+            <div className="mb-6 p-4 bg-white/80 rounded-lg border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Tag Colors</h3>
+              <div className="space-y-2">
+                {getAllTags().map(tag => {
+                  const currentColor = getTagColor(tag);
+                  const isEditing = editingTagColor === tag;
+                  return (
+                    <div key={tag} className="flex items-center justify-between">
+                      <span className={`${currentColor} px-2.5 py-1 rounded-lg font-semibold text-sm border`}>
+                        #{tag}
+                      </span>
+                      {isEditing ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {tagColors.map((color, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setCustomTagColor(tag, index);
+                                setEditingTagColor(null);
+                              }}
+                              className={`${color} w-6 h-6 rounded border-2 hover:scale-110 transition-transform`}
+                              title={`Color ${index + 1}`}
+                            />
+                          ))}
+                          <button
+                            onClick={() => setEditingTagColor(null)}
+                            className="ml-2 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setEditingTagColor(tag)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Change Color
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           {getFilteredItems().length === 0 ? (
             <div className="text-center text-gray-400 mt-16">
