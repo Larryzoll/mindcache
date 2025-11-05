@@ -2,11 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-console.log('Environment check:', {
-  url: process.env.REACT_APP_SUPABASE_URL,
-  hasKey: !!process.env.REACT_APP_SUPABASE_ANON_KEY
-});
-
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
   process.env.REACT_APP_SUPABASE_ANON_KEY
@@ -135,15 +130,12 @@ export default function UnifiedNotesApp() {
 
   // Auth check
   useEffect(() => {
-    console.log('Auth check running...');
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Session check:', { hasSession: !!session, user: session?.user?.email });
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', { event: _event, hasUser: !!session?.user });
       setUser(session?.user ?? null);
     });
 
@@ -687,8 +679,6 @@ export default function UnifiedNotesApp() {
   };
 
   // Loading/Auth check
-  console.log('Render check:', { loading, hasUser: !!user });
-  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
@@ -700,7 +690,6 @@ export default function UnifiedNotesApp() {
   }
 
   if (!user) {
-    console.log('No user, showing Auth component');
     return <Auth onAuth={setUser} />;
   }
 
