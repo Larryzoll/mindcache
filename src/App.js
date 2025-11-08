@@ -757,7 +757,7 @@ export default function UnifiedNotesApp() {
 
   // Part 4 will be the return statement with all the JSX
   return ( <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="md:hidden fixed top-4 right-4 z-50 flex gap-2">
+      <div className="md:hidden fixed top-20 right-4 z-50 flex gap-2">
         <button
           onClick={() => setActivePane('notes')}
           className={`px-3 py-1.5 text-sm rounded-lg shadow-lg font-medium ${activePane === 'notes' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}
@@ -790,7 +790,7 @@ export default function UnifiedNotesApp() {
             </div>
           </div>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
-            <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">- bullets</span>
+            <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">- bullets</span>
           </p>
           <div className="relative">
             <textarea
@@ -903,7 +903,7 @@ export default function UnifiedNotesApp() {
       </div>
 
       <div className={`w-full md:w-1/2 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 flex flex-col ${activePane === 'filter' ? 'block' : 'hidden md:flex'}`}>
-        <div className="p-4 md:p-6 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-lg">
+        <div className="p-4 md:p-6 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-b border-slate-200 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="text-blue-600" size={20} strokeWidth={2.5} />
             <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">Filters</h2>
@@ -961,7 +961,7 @@ export default function UnifiedNotesApp() {
           ) : (
             <div className="space-y-3">
               {getFilteredItems().map(item => (
-                <div key={item.id} className="flex items-start gap-3 p-4 bg-white/80 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <div key={item.id} className="flex items-start gap-3 p-4 bg-white/80 dark:bg-gray-700/80 rounded-lg border border-slate-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
                   {item.type === 'todo' && (
                     <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
                       {item.status === 'completed' ? (
