@@ -576,7 +576,7 @@ export default function UnifiedNotesApp() {
     
     const processItalicAndUnderline = (text, prefix) => {
       const segments = [];
-      const formatRegex = /(\*|_)([^\*_]+?)\1/g;
+      const formatRegex = /(\*|_)([^*_]+?)\1/g;
       let lastIndex = 0;
       let match;
       
