@@ -82,7 +82,7 @@ function Auth({ onAuth }) {
 
         <button
           onClick={() => setIsLogin(!isLogin)}
-          className="w-full mt-4 text-sm text-gray-600 hover:text-gray-800"
+          className="w-full mt-4 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-200"
         >
           {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
         </button>
@@ -756,38 +756,40 @@ export default function UnifiedNotesApp() {
   }
 
   // Part 4 will be the return statement with all the JSX
-  return ( <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50">
+  return ( <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="md:hidden fixed top-4 right-4 z-50 flex gap-2">
         <button
           onClick={() => setActivePane('notes')}
-          className={`px-3 py-1.5 text-sm rounded-lg shadow-lg font-medium ${activePane === 'notes' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+          className={`px-3 py-1.5 text-sm rounded-lg shadow-lg font-medium ${activePane === 'notes' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}
         >
           Notes
         </button>
         <button
           onClick={() => setActivePane('filter')}
-          className={`p-1.5 rounded-lg shadow-lg ${activePane === 'filter' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
+          className={`p-1.5 rounded-lg shadow-lg ${activePane === 'filter' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}
         >
           <Filter size={18} />
         </button>
       </div>
 
-      <div className={`w-full md:w-1/2 bg-white/90 backdrop-blur-sm border-r border-slate-200 flex flex-col shadow-xl ${activePane === 'notes' ? 'block' : 'hidden md:flex'}`}>
-        <div className="p-4 md:p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50/50 to-slate-50/50">
+      <div className={`w-full md:w-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-r border-slate-200 dark:border-gray-700 flex flex-col shadow-xl ${activePane === 'notes' ? 'block' : 'hidden md:flex'}`}>
+        <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 bg-gradient-to-r from-blue-50/50 to-slate-50/50 dark:from-gray-800/50 dark:to-gray-900/50">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
-            <div className="flex items-center gap-2">
-              <span className="text-xs md:text-sm text-gray-600 truncate max-w-[120px] md:max-w-none">{user.email}</span>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
+              <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[80px] md:max-w-none md:text-sm">{user.email}</span>
+            </div>
+            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2">
               <button
                 onClick={handleSignOut}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all flex-shrink-0"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:text-gray-200 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
                 title="Sign out"
               >
-                <LogOut size={20} />
+                <LogOut size={18} className="md:w-5 md:h-5" />
               </button>
             </div>
           </div>
-          <p className="text-xs md:text-sm text-gray-600 mb-3">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
             <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-xs">- bullets</span>
           </p>
           <div className="relative">
@@ -801,18 +803,18 @@ export default function UnifiedNotesApp() {
               onKeyDown={handleKeyDown}
               placeholder="Write something..."
               rows={1}
-              className="w-full px-4 py-3 text-gray-800 bg-white border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm resize-none"
+              className="w-full px-4 py-3 text-gray-800 dark:text-gray-200 dark:text-gray-200 bg-white dark:bg-gray-700 border-2 border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm resize-none"
               style={{ minHeight: '48px', maxHeight: '200px' }}
             />
             {showAutocomplete && autocompleteOptions.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-white border-2 border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-slate-300 dark:border-gray-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
                 {autocompleteOptions.map((tag, index) => {
                   const tagColor = getTagColor(tag);
                   return (
                     <div
                       key={tag}
                       onClick={() => insertTag(tag)}
-                      className={`px-4 py-2 cursor-pointer ${index === selectedAutocomplete ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                      className={`px-4 py-2 cursor-pointer ${index === selectedAutocomplete ? 'bg-blue-50' : 'hover:bg-slate-50 dark:hover:bg-gray-700'}`}
                     >
                       <span className={`${tagColor} px-2.5 py-1 rounded-lg font-semibold text-sm border`}>
                         #{tag}
@@ -835,7 +837,7 @@ export default function UnifiedNotesApp() {
           ) : (
             <div className="space-y-1.5">
               {items.map(item => (
-                <div key={item.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-lg group border border-transparent hover:border-slate-200">
+                <div key={item.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200">
                   {item.type === 'todo' && (
                     <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
                       {item.status === 'completed' ? (
@@ -867,7 +869,7 @@ export default function UnifiedNotesApp() {
                         style={{ minHeight: '40px' }}
                       />
                     ) : (
-                      <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
+                      <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
                         {renderItemText(item, `left-${item.id}`)}
                       </p>
                     )}
@@ -900,7 +902,7 @@ export default function UnifiedNotesApp() {
         </div>
       </div>
 
-      <div className={`w-full md:w-1/2 bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col ${activePane === 'filter' ? 'block' : 'hidden md:flex'}`}>
+      <div className={`w-full md:w-1/2 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 flex flex-col ${activePane === 'filter' ? 'block' : 'hidden md:flex'}`}>
         <div className="p-4 md:p-6 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="text-blue-600" size={20} strokeWidth={2.5} />
@@ -970,7 +972,7 @@ export default function UnifiedNotesApp() {
                     </button>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
+                    <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
                       {renderItemText(item, `right-${item.id}`)}
                     </p>
                   </div>
