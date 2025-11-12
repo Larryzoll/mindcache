@@ -955,13 +955,13 @@ function UnifiedNotesApp() {
           
           <div className="space-y-3">
             <div className="flex gap-2">
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 text-sm">
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm">
                 <option value="all">All</option>
                 <option value="notes">Notes</option>
                 <option value="todos">Todos</option>
               </select>
               
-              <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 text-sm">
+              <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm">
                 <option value="">All Tags</option>
                 {getAllTags().map(tag => (
                   <option key={tag} value={tag}>#{tag}</option>
@@ -970,13 +970,13 @@ function UnifiedNotesApp() {
             </div>
 
             <div className="flex gap-2">
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 text-sm">
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm">
                 <option value="all">All Status</option>
                 <option value="incomplete">Incomplete</option>
                 <option value="completed">Completed</option>
               </select>
               
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 text-sm">
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm">
                 <option value="recent">Most Recent</option>
                 <option value="dueDate">Due Date</option>
               </select>
@@ -984,7 +984,7 @@ function UnifiedNotesApp() {
 
             <button
               onClick={clearFilters}
-              className="w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-slate-300 rounded-lg transition-all"
+              className="w-full px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-slate-300 dark:border-gray-600 rounded-lg transition-all"
             >
               Clear All Filters
             </button>
