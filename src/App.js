@@ -947,7 +947,7 @@ function UnifiedNotesApp() {
       </div>
 
       <div className={`w-full md:w-1/2 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 flex flex-col ${activePane === 'filter' ? 'block' : 'hidden md:flex'}`}>
-        <div className="p-4 md:p-6 bg-white/70 backdrop-blur-md border-b border-slate-200 shadow-lg">
+        <div className="p-4 md:p-6 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-b border-slate-200 dark:border-gray-700 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="text-blue-600" size={20} strokeWidth={2.5} />
             <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">Filters</h2>
@@ -1005,7 +1005,7 @@ function UnifiedNotesApp() {
           ) : (
             <div className="space-y-3">
               {getFilteredItems().map(item => (
-                <div key={item.id} className="flex items-start gap-3 p-4 bg-white/80 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                <div key={item.id} className="flex items-start gap-3 p-4 bg-white/80 dark:bg-gray-800/80 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
                   {item.type === 'todo' && (
                     <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
                       {item.status === 'completed' ? (
