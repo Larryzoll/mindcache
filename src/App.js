@@ -800,7 +800,8 @@ function UnifiedNotesApp() {
   }
 
   // Part 4 will be the return statement with all the JSX
-  return ( <div className="flex h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+  return ( <div className="flex flex-col h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="flex flex-1 overflow-hidden">
       <div className="md:hidden fixed top-4 right-4 z-50 flex gap-2">
         <button
           onClick={() => setActivePane('notes')}
@@ -818,20 +819,8 @@ function UnifiedNotesApp() {
 
       <div className={`w-full md:w-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-r border-slate-200 dark:border-gray-700 flex flex-col shadow-xl ${activePane === 'notes' ? 'block' : 'hidden md:flex'}`}>
         <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 bg-gradient-to-r from-blue-50/50 to-slate-50/50 dark:from-gray-800/50 dark:to-gray-900/50">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
-              <span className="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[80px] md:max-w-none md:text-sm">{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2">
-              <button
-                onClick={handleSignOut}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:text-gray-200 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
-                title="Sign out"
-              >
-                <LogOut size={18} className="md:w-5 md:h-5" />
-              </button>
-            </div>
+          <div className="flex items-center justify-center mb-2">
+            <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
           </div>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
             <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">- bullets</span>
@@ -1027,6 +1016,24 @@ function UnifiedNotesApp() {
         </div>
       </div>
     </div>
+
+    {/* Footer */}
+    <div className="bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-600 dark:text-gray-400">{user.email}</span>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+        >
+          <LogOut size={16} />
+          Sign Out
+        </button>
+      </div>
+      <div className="text-xs text-gray-500 dark:text-gray-500">
+        © 2025 MindCache. All rights reserved.
+      </div>
+    </div>
+  </div>
   );
 }
 // Main App component with routing
