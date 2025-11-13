@@ -819,7 +819,7 @@ function UnifiedNotesApp() {
 
       <div className={`w-full md:w-1/2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-r border-slate-200 dark:border-gray-700 flex flex-col shadow-xl ${activePane === 'notes' ? 'block' : 'hidden md:flex'}`}>
         <div className="p-4 md:p-6 border-b border-slate-200 dark:border-gray-700 bg-gradient-to-r from-blue-50/50 to-slate-50/50 dark:from-gray-800/50 dark:to-gray-900/50">
-          <div className="flex items-center justify-center mb-2">
+          <div className="flex items-center mb-2">
             <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
           </div>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -1018,7 +1018,7 @@ function UnifiedNotesApp() {
     </div>
 
     {/* Footer */}
-    <div className="bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
+    <div className="bg-white dark:bg-gray-800 border-t border-slate-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between flex-shrink-0">
       <div className="flex items-center gap-3">
         <span className="text-sm text-gray-600 dark:text-gray-400">{user.email}</span>
         <button
