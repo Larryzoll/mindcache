@@ -1045,8 +1045,16 @@ function UnifiedNotesApp() {
           Sign Out
         </button>
       </div>
-      <div className="text-xs text-gray-500 dark:text-gray-500">
-        © 2025 MindCache. All rights reserved.
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="text-xs text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+        >
+          Tutorial
+        </button>
+        <span className="text-xs text-gray-500 dark:text-gray-500">
+          © 2025 MindCache. All rights reserved.
+        </span>
       </div>
     </div>
 
