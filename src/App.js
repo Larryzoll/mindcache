@@ -4,6 +4,7 @@ import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut }
 import { createClient } from '@supabase/supabase-js';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TutorialModal from './components/TutorialModal';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
@@ -149,6 +150,7 @@ function UnifiedNotesApp() {
   const [editingText, setEditingText] = useState('');
   const [activePane, setActivePane] = useState('notes');
   const [loading, setLoading] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [customTagColors, setCustomTagColors] = useState({});
   const [editingTagColor, setEditingTagColor] = useState(null); // Will store unique key like "tagName-keyPrefix-index"
   const inputRef = useRef(null);
@@ -201,6 +203,12 @@ function UnifiedNotesApp() {
       // Load custom tag colors from Supabase user metadata
       if (user.user_metadata?.tag_colors) {
         setCustomTagColors(user.user_metadata.tag_colors);
+      }
+
+      // Check if user has seen tutorial
+      const hasSeenTutorial = user.user_metadata?.has_seen_tutorial;
+      if (!hasSeenTutorial) {
+        setShowTutorial(true);
       }
       
       const channel = supabase
@@ -324,6 +332,14 @@ function UnifiedNotesApp() {
     await supabase.auth.signOut();
     setUser(null);
     setItems([]);
+  };
+
+  const handleCloseTutorial = async () => {
+    setShowTutorial(false);
+    // Mark tutorial as seen in user metadata
+    await supabase.auth.updateUser({
+      data: { has_seen_tutorial: true }
+    });
   };
 
   const setCustomTagColor = async (tag, colorIndex) => {
@@ -1033,6 +1049,9 @@ function UnifiedNotesApp() {
         © 2025 MindCache. All rights reserved.
       </div>
     </div>
+
+    {/* Tutorial Modal */}
+    <TutorialModal isOpen={showTutorial} onClose={handleCloseTutorial} />
   </div>
   );
 }
