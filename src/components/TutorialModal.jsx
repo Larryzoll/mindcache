@@ -3,13 +3,13 @@ import { X } from 'lucide-react';
 
 export default function TutorialModal({ isOpen, onClose }) {
   const playerRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen && window.YT) {
-      // YouTube IFrame API is already loaded
-      initPlayer();
-    } else if (isOpen) {
-      // Load YouTube IFrame API
+    if (!isOpen) return;
+
+    // Load YouTube IFrame API if not already loaded
+    if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -18,25 +18,36 @@ export default function TutorialModal({ isOpen, onClose }) {
       window.onYouTubeIframeAPIReady = () => {
         initPlayer();
       };
+    } else {
+      // API already loaded, init immediately
+      initPlayer();
     }
+
+    return () => {
+      // Cleanup player when modal closes
+      if (playerRef.current && playerRef.current.destroy) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   const initPlayer = () => {
-    if (playerRef.current) {
-      playerRef.current = new window.YT.Player('tutorial-video', {
-        videoId: 'lIyYN4Y6so4',
-        playerVars: {
-          autoplay: 1,
-          playsinline: 1,
+    if (!containerRef.current || playerRef.current) return;
+
+    playerRef.current = new window.YT.Player('tutorial-video', {
+      videoId: 'lIyYN4Y6so4',
+      playerVars: {
+        autoplay: 1,
+        playsinline: 1,
+      },
+      events: {
+        onReady: (event) => {
+          // Set playback speed to 2x when player is ready
+          event.target.setPlaybackRate(2);
         },
-        events: {
-          onReady: (event) => {
-            // Set playback speed to 2x when player is ready
-            event.target.setPlaybackRate(2);
-          },
-        },
-      });
-    }
+      },
+    });
   };
 
   if (!isOpen) return null;
@@ -59,7 +70,7 @@ export default function TutorialModal({ isOpen, onClose }) {
 
         {/* Video */}
         <div className="flex-1 p-6 overflow-y-auto">
-          <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
+          <div ref={containerRef} className="aspect-video w-full bg-black rounded-lg overflow-hidden">
             <div id="tutorial-video" className="w-full h-full"></div>
           </div>
           
