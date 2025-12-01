@@ -47,7 +47,7 @@ function Auth({ onAuth }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: 'https://www.mindcache.me'
       }
     });
     if (error) {
