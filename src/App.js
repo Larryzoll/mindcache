@@ -245,8 +245,6 @@ function UnifiedNotesApp() {
     // Get value directly from textarea to avoid state timing issues
     const inputValue = inputRef.current ? inputRef.current.value : currentInput;
     const parsed = parseItem(inputValue);
-    console.log('Current input:', inputValue);
-    console.log('Parsed result:', parsed);
     
     const { error } = await supabase
       .from('notes')
@@ -406,19 +404,15 @@ function UnifiedNotesApp() {
     // Parse subtasks from indented lines
     const subtasks = [];
     if (isTodo && lines.length > 1) {
-      console.log('Parsing subtasks, total lines:', lines.length);
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
-        console.log(`Line ${i}:`, JSON.stringify(line));
         // Check if line is indented and starts with checkbox
         // Match lines that start with whitespace followed by [] or [x]
         const match = line.match(/^\s+\[(x|X| )?\]/);
-        console.log(`  Match:`, match);
         if (match) {
           const trimmed = line.trim();
           const isSubtaskCompleted = trimmed.startsWith('[x]') || trimmed.startsWith('[X]');
           const subtaskText = trimmed.replace(/^\[(x|X| )?\]/, '').trim();
-          console.log(`  Adding subtask:`, subtaskText);
           if (subtaskText) {
             subtasks.push({
               text: subtaskText,
@@ -1080,7 +1074,7 @@ function UnifiedNotesApp() {
                               <Circle size={18} className="text-gray-400" strokeWidth={2.5} />
                             )}
                           </button>
-                          <p className={`text-sm text-gray-700 dark:text-gray-300 ${subtask.completed ? 'line-through opacity-50' : ''}`}>
+                          <p className={`text-sm text-red-600 dark:text-red-400 font-medium ${subtask.completed ? 'line-through opacity-50' : ''}`}>
                             {subtask.text}
                           </p>
                         </div>
@@ -1164,21 +1158,75 @@ function UnifiedNotesApp() {
           ) : (
             <div className="space-y-3">
               {getFilteredItems().map(item => (
-                <div key={item.id} className="flex items-start gap-3 p-4 bg-white/80 dark:bg-gray-800/80 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-                  {item.type === 'todo' && (
-                    <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
-                      {item.status === 'completed' ? (
-                        <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
-                      ) : (
-                        <Circle size={22} className="text-red-500" strokeWidth={2.5} />
+                <div key={item.id} className="flex flex-col">
+                  <div className="flex items-start gap-3 p-4 bg-white/80 dark:bg-gray-800/80 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
+                    {/* Expand/Collapse for todos with subtasks */}
+                    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                      <button 
+                        onClick={() => toggleExpanded(item.id)} 
+                        className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
+                      >
+                        {expandedTodos[item.id] ? (
+                          <ChevronDown size={18} className="text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronRight size={18} className="text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Todo checkbox */}
+                    {item.type === 'todo' && (
+                      <button 
+                        onClick={() => toggleTodo(item.id)} 
+                        className={`mt-1 flex-shrink-0 hover:scale-110 transition-transform ${item.subtasks && item.subtasks.length > 0 ? 'cursor-not-allowed opacity-50' : ''}`}
+                        disabled={item.subtasks && item.subtasks.length > 0}
+                        title={item.subtasks && item.subtasks.length > 0 ? 'Complete all subtasks first' : ''}
+                      >
+                        {item.status === 'completed' ? (
+                          <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
+                        ) : (
+                          <Circle size={22} className="text-red-500" strokeWidth={2.5} />
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Main content */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
+                        {renderItemText(item, `right-${item.id}`)}
+                      </p>
+                      
+                      {/* Subtask progress */}
+                      {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
+                        </div>
                       )}
-                    </button>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
-                      {renderItemText(item, `right-${item.id}`)}
-                    </p>
+                    </div>
                   </div>
+                  
+                  {/* Subtasks (when expanded) */}
+                  {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
+                    <div className="ml-12 space-y-1 mt-1">
+                      {item.subtasks.map((subtask, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
+                          <button 
+                            onClick={() => toggleSubtask(item.id, index)}
+                            className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform"
+                          >
+                            {subtask.completed ? (
+                              <CheckCircle2 size={18} className="text-green-500" strokeWidth={2.5} />
+                            ) : (
+                              <Circle size={18} className="text-gray-400" strokeWidth={2.5} />
+                            )}
+                          </button>
+                          <p className={`text-sm text-red-600 dark:text-red-400 font-medium ${subtask.completed ? 'line-through opacity-50' : ''}`}>
+                            {subtask.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
