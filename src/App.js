@@ -242,8 +242,10 @@ function UnifiedNotesApp() {
   };
 
   const addNote = async () => {
-    const parsed = parseItem(currentInput);
-    console.log('Current input:', currentInput);
+    // Get value directly from textarea to avoid state timing issues
+    const inputValue = inputRef.current ? inputRef.current.value : currentInput;
+    const parsed = parseItem(inputValue);
+    console.log('Current input:', inputValue);
     console.log('Parsed result:', parsed);
     
     const { error } = await supabase
@@ -263,6 +265,7 @@ function UnifiedNotesApp() {
     } else {
       setCurrentInput('');
       if (inputRef.current) {
+        inputRef.current.value = '';
         inputRef.current.style.height = 'auto';
       }
       fetchNotes();
