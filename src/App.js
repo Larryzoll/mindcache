@@ -411,13 +411,13 @@ function UnifiedNotesApp() {
         const line = lines[i];
         console.log(`Line ${i}:`, JSON.stringify(line));
         // Check if line is indented and starts with checkbox
-        const match1 = line.match(/^\s+\[[\sx]\]/);
-        const match2 = line.match(/^\s{2,}\[[\sx]\]/);
-        console.log(`  Match1:`, match1, `Match2:`, match2);
-        if (match1 || match2) {
+        // Match lines that start with whitespace followed by [] or [x]
+        const match = line.match(/^\s+\[(x|X| )?\]/);
+        console.log(`  Match:`, match);
+        if (match) {
           const trimmed = line.trim();
-          const isSubtaskCompleted = trimmed.startsWith('[x]');
-          const subtaskText = trimmed.replace(/^\[[\sx]\]/, '').trim();
+          const isSubtaskCompleted = trimmed.startsWith('[x]') || trimmed.startsWith('[X]');
+          const subtaskText = trimmed.replace(/^\[(x|X| )?\]/, '').trim();
           console.log(`  Adding subtask:`, subtaskText);
           if (subtaskText) {
             subtasks.push({
