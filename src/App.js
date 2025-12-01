@@ -243,6 +243,8 @@ function UnifiedNotesApp() {
 
   const addNote = async () => {
     const parsed = parseItem(currentInput);
+    console.log('Current input:', currentInput);
+    console.log('Parsed result:', parsed);
     
     const { error } = await supabase
       .from('notes')
