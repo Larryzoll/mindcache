@@ -4,6 +4,7 @@ import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut, 
 import { createClient } from '@supabase/supabase-js';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TutorialModal from './components/TutorialModal';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
@@ -959,123 +960,124 @@ function UnifiedNotesApp() {
           ) : (
             <div className="space-y-1.5">
               {items.map(item => (
-  <div key={item.id} className="flex flex-col">
-    <div className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200">
-      {/* Expand/Collapse for todos with subtasks */}
-      {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
-        <button 
-          onClick={() => toggleExpanded(item.id)} 
-          className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
-        >
-          {expandedTodos[item.id] ? (
-            <ChevronDown size={18} className="text-gray-500" />
-          ) : (
-            <ChevronRight size={18} className="text-gray-500" />
-          )}
-        </button>
-      )}
-      
-      {/* Todo checkbox */}
-      {item.type === 'todo' && (
-        <button 
-          onClick={() => toggleTodo(item.id)} 
-          className={`mt-1 flex-shrink-0 hover:scale-110 transition-transform ${item.subtasks && item.subtasks.length > 0 ? 'cursor-not-allowed opacity-50' : ''}`}
-          disabled={item.subtasks && item.subtasks.length > 0}
-        >
-          {item.status === 'completed' ? (
-            <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
-          ) : (
-            <Circle size={22} className="text-red-500" strokeWidth={2.5} />
-          )}
-        </button>
-      )}
-      
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
-        {editingItemId === item.id ? (
-          <textarea
-            value={editingText}
-            onChange={(e) => {
-              setEditingText(e.target.value);
-              autoResize(e.target);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                saveEditedItem(item.id);
-              } else if (e.key === 'Escape') {
-                cancelEditingItem();
-              }
-            }}
-            className="w-full px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-gray-700 dark:text-gray-200"
-            autoFocus
-            rows={item.subtasks && item.subtasks.length > 0 ? item.subtasks.length + 1 : 1}
-            style={{ minHeight: '40px' }}
-          />
-        ) : (
-          <>
-            <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
-              {renderItemText(item, `left-${item.id}`)}
-            </p>
-            
-            {/* Subtask progress */}
-            {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
-              </div>
-            )}
-          </>
-        )}
-      </div>
-      
-      {/* Edit/Delete buttons */}
-      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
-        {editingItemId === item.id ? (
-          <>
-            <button onClick={() => saveEditedItem(item.id)} className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-gray-600 rounded-lg">
-              <Check size={18} strokeWidth={2.5} />
-            </button>
-            <button onClick={cancelEditingItem} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
-              <X size={18} strokeWidth={2.5} />
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={() => startEditingItem(item)} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600 rounded-lg">
-              <Edit2 size={18} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => deleteItem(item.id)} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-lg">
-              <Trash2 size={18} strokeWidth={2.5} />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-    
-    {/* Subtasks (when expanded) */}
-    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
-      <div className="ml-12 space-y-1 mt-1">
-        {item.subtasks.map((subtask, index) => (
-          <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
-            <button 
-              onClick={() => toggleSubtask(item.id, index)}
-              className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform"
-            >
-              {subtask.completed ? (
-                <CheckCircle2 size={18} className="text-green-500" strokeWidth={2.5} />
-              ) : (
-                <Circle size={18} className="text-gray-400" strokeWidth={2.5} />
-              )}
-            </button>
-            <p className={`text-sm text-gray-700 dark:text-gray-300 ${subtask.completed ? 'line-through opacity-50' : ''}`}>
-              {subtask.text}
-            </p>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-))}
+                <div key={item.id} className="flex flex-col">
+                  <div className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200 dark:hover:border-gray-600">
+                    {/* Expand/Collapse for todos with subtasks */}
+                    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                      <button 
+                        onClick={() => toggleExpanded(item.id)} 
+                        className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
+                      >
+                        {expandedTodos[item.id] ? (
+                          <ChevronDown size={18} className="text-gray-500 dark:text-gray-400" />
+                        ) : (
+                          <ChevronRight size={18} className="text-gray-500 dark:text-gray-400" />
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Todo checkbox */}
+                    {item.type === 'todo' && (
+                      <button 
+                        onClick={() => toggleTodo(item.id)} 
+                        className={`mt-1 flex-shrink-0 hover:scale-110 transition-transform ${item.subtasks && item.subtasks.length > 0 ? 'cursor-not-allowed opacity-50' : ''}`}
+                        disabled={item.subtasks && item.subtasks.length > 0}
+                        title={item.subtasks && item.subtasks.length > 0 ? 'Complete all subtasks first' : ''}
+                      >
+                        {item.status === 'completed' ? (
+                          <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
+                        ) : (
+                          <Circle size={22} className="text-red-500" strokeWidth={2.5} />
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Main content */}
+                    <div className="flex-1 min-w-0">
+                      {editingItemId === item.id ? (
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => {
+                            setEditingText(e.target.value);
+                            autoResize(e.target);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              saveEditedItem(item.id);
+                            } else if (e.key === 'Escape') {
+                              cancelEditingItem();
+                            }
+                          }}
+                          className="w-full px-4 py-2 border-2 border-blue-500 dark:border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-gray-700 dark:text-gray-200"
+                          autoFocus
+                          rows={item.subtasks && item.subtasks.length > 0 ? item.subtasks.length + 1 : 1}
+                          style={{ minHeight: '40px' }}
+                        />
+                      ) : (
+                        <>
+                          <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
+                            {renderItemText(item, `left-${item.id}`)}
+                          </p>
+                          
+                          {/* Subtask progress */}
+                          {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Edit/Delete buttons */}
+                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
+                      {editingItemId === item.id ? (
+                        <>
+                          <button onClick={() => saveEditedItem(item.id)} className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-gray-600 rounded-lg">
+                            <Check size={18} strokeWidth={2.5} />
+                          </button>
+                          <button onClick={cancelEditingItem} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
+                            <X size={18} strokeWidth={2.5} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => startEditingItem(item)} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600 rounded-lg">
+                            <Edit2 size={18} strokeWidth={2.5} />
+                          </button>
+                          <button onClick={() => deleteItem(item.id)} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-lg">
+                            <Trash2 size={18} strokeWidth={2.5} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Subtasks (when expanded) */}
+                  {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
+                    <div className="ml-12 space-y-1 mt-1">
+                      {item.subtasks.map((subtask, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
+                          <button 
+                            onClick={() => toggleSubtask(item.id, index)}
+                            className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform"
+                          >
+                            {subtask.completed ? (
+                              <CheckCircle2 size={18} className="text-green-500" strokeWidth={2.5} />
+                            ) : (
+                              <Circle size={18} className="text-gray-400" strokeWidth={2.5} />
+                            )}
+                          </button>
+                          <p className={`text-sm text-gray-700 dark:text-gray-300 ${subtask.completed ? 'line-through opacity-50' : ''}`}>
+                            {subtask.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
