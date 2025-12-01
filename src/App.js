@@ -406,13 +406,19 @@ function UnifiedNotesApp() {
     // Parse subtasks from indented lines
     const subtasks = [];
     if (isTodo && lines.length > 1) {
+      console.log('Parsing subtasks, total lines:', lines.length);
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
+        console.log(`Line ${i}:`, JSON.stringify(line));
         // Check if line is indented and starts with checkbox
-        if (line.match(/^\s+\[[\sx]\]/) || line.match(/^\s{2,}\[[\sx]\]/)) {
+        const match1 = line.match(/^\s+\[[\sx]\]/);
+        const match2 = line.match(/^\s{2,}\[[\sx]\]/);
+        console.log(`  Match1:`, match1, `Match2:`, match2);
+        if (match1 || match2) {
           const trimmed = line.trim();
           const isSubtaskCompleted = trimmed.startsWith('[x]');
           const subtaskText = trimmed.replace(/^\[[\sx]\]/, '').trim();
+          console.log(`  Adding subtask:`, subtaskText);
           if (subtaskText) {
             subtasks.push({
               text: subtaskText,
