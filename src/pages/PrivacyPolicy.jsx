@@ -131,9 +131,6 @@ export default function PrivacyPolicy() {
           <p className="mb-4">
             If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us at:
           </p>
-          <p className="mb-4">
-            <strong>Email:</strong> larry@teamzoll.com
-          </p>
 
           <p className="mt-8 text-sm text-gray-600 dark:text-gray-400">
             By using MindCache, you acknowledge that you have read and understood this Privacy Policy.

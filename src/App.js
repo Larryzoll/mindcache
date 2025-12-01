@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut } from 'lucide-react';
+import { Circle, CheckCircle2, X, Edit2, Trash2, Check, Search, Filter, LogOut, ChevronRight, ChevronDown } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -143,6 +143,7 @@ function UnifiedNotesApp() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedTodos, setExpandedTodos] = useState({});
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [autocompleteOptions, setAutocompleteOptions] = useState([]);
   const [selectedAutocomplete, setSelectedAutocomplete] = useState(0);
@@ -232,7 +233,8 @@ function UnifiedNotesApp() {
         status: note.status,
         tags: note.tags ? note.tags.split(',').filter(t => t) : [],
         dueDate: note.due_date,
-        timestamp: note.created_at
+        timestamp: note.created_at,
+        subtasks: note.subtasks ? JSON.parse(note.subtasks) : []
       }));
       setItems(formattedNotes);
     }
@@ -249,7 +251,8 @@ function UnifiedNotesApp() {
         type: parsed.type,
         status: parsed.status,
         tags: parsed.tags.join(','),
-        due_date: parsed.dueDate
+        due_date: parsed.dueDate,
+        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null
       }]);
     
     if (error) {
@@ -267,6 +270,11 @@ function UnifiedNotesApp() {
     const item = items.find(i => i.id === id);
     if (!item || item.type !== 'todo') return;
 
+    // If todo has subtasks, don't allow toggling parent directly
+    if (item.subtasks && item.subtasks.length > 0) {
+      return; // Parent can only be completed when all subtasks are done
+    }
+
     const newStatus = item.status === 'completed' ? 'incomplete' : 'completed';
     
     const { error } = await supabase
@@ -279,6 +287,42 @@ function UnifiedNotesApp() {
     } else {
       fetchNotes();
     }
+  };
+
+  const toggleSubtask = async (todoId, subtaskIndex) => {
+    const item = items.find(i => i.id === todoId);
+    if (!item || !item.subtasks) return;
+
+    const updatedSubtasks = [...item.subtasks];
+    updatedSubtasks[subtaskIndex] = {
+      ...updatedSubtasks[subtaskIndex],
+      completed: !updatedSubtasks[subtaskIndex].completed
+    };
+
+    // Check if all subtasks are complete
+    const allComplete = updatedSubtasks.every(st => st.completed);
+    const newParentStatus = allComplete ? 'completed' : 'incomplete';
+
+    const { error } = await supabase
+      .from('notes')
+      .update({ 
+        subtasks: JSON.stringify(updatedSubtasks),
+        status: newParentStatus
+      })
+      .eq('id', todoId);
+    
+    if (error) {
+      console.error('Error toggling subtask:', error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  const toggleExpanded = (todoId) => {
+    setExpandedTodos(prev => ({
+      ...prev,
+      [todoId]: !prev[todoId]
+    }));
   };
 
   const deleteItem = async (id) => {
@@ -308,7 +352,8 @@ function UnifiedNotesApp() {
         type: parsed.type,
         status: parsed.status,
         tags: parsed.tags.join(','),
-        due_date: parsed.dueDate
+        due_date: parsed.dueDate,
+        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null
       })
       .eq('id', id);
     
@@ -339,14 +384,37 @@ function UnifiedNotesApp() {
     }
   };
   const parseItem = (text) => {
-    const isTodo = text.trim().startsWith('[]') || text.trim().startsWith('[x]');
-    const isCompleted = text.trim().startsWith('[x]');
+    const lines = text.split('\n');
+    const mainLine = lines[0];
     
-    let displayText = text;
-    if (text.trim().startsWith('[]')) {
-      displayText = text.replace('[]', '').trim();
-    } else if (text.trim().startsWith('[x]')) {
-      displayText = text.replace('[x]', '').trim();
+    const isTodo = mainLine.trim().startsWith('[]') || mainLine.trim().startsWith('[x]');
+    const isCompleted = mainLine.trim().startsWith('[x]');
+    
+    let displayText = mainLine;
+    if (mainLine.trim().startsWith('[]')) {
+      displayText = mainLine.replace('[]', '').trim();
+    } else if (mainLine.trim().startsWith('[x]')) {
+      displayText = mainLine.replace('[x]', '').trim();
+    }
+    
+    // Parse subtasks from indented lines
+    const subtasks = [];
+    if (isTodo && lines.length > 1) {
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        // Check if line is indented and starts with checkbox
+        if (line.match(/^\s+\[[\sx]\]/) || line.match(/^\s{2,}\[[\sx]\]/)) {
+          const trimmed = line.trim();
+          const isSubtaskCompleted = trimmed.startsWith('[x]');
+          const subtaskText = trimmed.replace(/^\[[\sx]\]/, '').trim();
+          if (subtaskText) {
+            subtasks.push({
+              text: subtaskText,
+              completed: isSubtaskCompleted
+            });
+          }
+        }
+      }
     }
     
     const tagRegex = /#(\w+)/g;
@@ -383,7 +451,8 @@ function UnifiedNotesApp() {
       type: isTodo ? 'todo' : 'note',
       status: isTodo ? (isCompleted ? 'completed' : 'incomplete') : null,
       tags: tags,
-      dueDate: dueDate
+      dueDate: dueDate,
+      subtasks: subtasks.length > 0 ? subtasks : undefined
     };
   };
 
@@ -473,6 +542,15 @@ function UnifiedNotesApp() {
     if (item.type === 'todo') {
       const bracket = item.status === 'completed' ? '[x]' : '[]';
       fullText = `${bracket} ${item.text}`;
+      
+      // Add subtasks if they exist
+      if (item.subtasks && item.subtasks.length > 0) {
+        const subtaskLines = item.subtasks.map(st => {
+          const stBracket = st.completed ? '[x]' : '[]';
+          return `  ${stBracket} ${st.text}`;
+        });
+        fullText = fullText + '\n' + subtaskLines.join('\n');
+      }
     }
     setEditingText(fullText);
   };
@@ -881,66 +959,123 @@ function UnifiedNotesApp() {
           ) : (
             <div className="space-y-1.5">
               {items.map(item => (
-                <div key={item.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200">
-                  {item.type === 'todo' && (
-                    <button onClick={() => toggleTodo(item.id)} className="mt-1 flex-shrink-0 hover:scale-110 transition-transform">
-                      {item.status === 'completed' ? (
-                        <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
-                      ) : (
-                        <Circle size={22} className="text-red-500" strokeWidth={2.5} />
-                      )}
-                    </button>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    {editingItemId === item.id ? (
-                      <textarea
-                        value={editingText}
-                        onChange={(e) => {
-                          setEditingText(e.target.value);
-                          autoResize(e.target);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            saveEditedItem(item.id);
-                          } else if (e.key === 'Escape') {
-                            cancelEditingItem();
-                          }
-                        }}
-                        className="w-full px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                        autoFocus
-                        rows={1}
-                        style={{ minHeight: '40px' }}
-                      />
-                    ) : (
-                      <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
-                        {renderItemText(item, `left-${item.id}`)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
-                    {editingItemId === item.id ? (
-                      <>
-                        <button onClick={() => saveEditedItem(item.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-lg">
-                          <Check size={18} strokeWidth={2.5} />
-                        </button>
-                        <button onClick={cancelEditingItem} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                          <X size={18} strokeWidth={2.5} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => startEditingItem(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                          <Edit2 size={18} strokeWidth={2.5} />
-                        </button>
-                        <button onClick={() => deleteItem(item.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                          <Trash2 size={18} strokeWidth={2.5} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
+  <div key={item.id} className="flex flex-col">
+    <div className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200">
+      {/* Expand/Collapse for todos with subtasks */}
+      {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+        <button 
+          onClick={() => toggleExpanded(item.id)} 
+          className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
+        >
+          {expandedTodos[item.id] ? (
+            <ChevronDown size={18} className="text-gray-500" />
+          ) : (
+            <ChevronRight size={18} className="text-gray-500" />
+          )}
+        </button>
+      )}
+      
+      {/* Todo checkbox */}
+      {item.type === 'todo' && (
+        <button 
+          onClick={() => toggleTodo(item.id)} 
+          className={`mt-1 flex-shrink-0 hover:scale-110 transition-transform ${item.subtasks && item.subtasks.length > 0 ? 'cursor-not-allowed opacity-50' : ''}`}
+          disabled={item.subtasks && item.subtasks.length > 0}
+        >
+          {item.status === 'completed' ? (
+            <CheckCircle2 size={22} className="text-green-500" strokeWidth={2.5} />
+          ) : (
+            <Circle size={22} className="text-red-500" strokeWidth={2.5} />
+          )}
+        </button>
+      )}
+      
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        {editingItemId === item.id ? (
+          <textarea
+            value={editingText}
+            onChange={(e) => {
+              setEditingText(e.target.value);
+              autoResize(e.target);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                saveEditedItem(item.id);
+              } else if (e.key === 'Escape') {
+                cancelEditingItem();
+              }
+            }}
+            className="w-full px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-gray-700 dark:text-gray-200"
+            autoFocus
+            rows={item.subtasks && item.subtasks.length > 0 ? item.subtasks.length + 1 : 1}
+            style={{ minHeight: '40px' }}
+          />
+        ) : (
+          <>
+            <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
+              {renderItemText(item, `left-${item.id}`)}
+            </p>
+            
+            {/* Subtask progress */}
+            {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      
+      {/* Edit/Delete buttons */}
+      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
+        {editingItemId === item.id ? (
+          <>
+            <button onClick={() => saveEditedItem(item.id)} className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-gray-600 rounded-lg">
+              <Check size={18} strokeWidth={2.5} />
+            </button>
+            <button onClick={cancelEditingItem} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg">
+              <X size={18} strokeWidth={2.5} />
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => startEditingItem(item)} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-600 rounded-lg">
+              <Edit2 size={18} strokeWidth={2.5} />
+            </button>
+            <button onClick={() => deleteItem(item.id)} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-lg">
+              <Trash2 size={18} strokeWidth={2.5} />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+    
+    {/* Subtasks (when expanded) */}
+    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
+      <div className="ml-12 space-y-1 mt-1">
+        {item.subtasks.map((subtask, index) => (
+          <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
+            <button 
+              onClick={() => toggleSubtask(item.id, index)}
+              className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform"
+            >
+              {subtask.completed ? (
+                <CheckCircle2 size={18} className="text-green-500" strokeWidth={2.5} />
+              ) : (
+                <Circle size={18} className="text-gray-400" strokeWidth={2.5} />
+              )}
+            </button>
+            <p className={`text-sm text-gray-700 dark:text-gray-300 ${subtask.completed ? 'line-through opacity-50' : ''}`}>
+              {subtask.text}
+            </p>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+))}
             </div>
           )}
         </div>
