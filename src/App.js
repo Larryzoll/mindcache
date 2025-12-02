@@ -145,6 +145,7 @@ function UnifiedNotesApp() {
   const [sortBy, setSortBy] = useState('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTodos, setExpandedTodos] = useState({});
+  const [inputFocused, setInputFocused] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [autocompleteOptions, setAutocompleteOptions] = useState([]);
   const [selectedAutocomplete, setSelectedAutocomplete] = useState(0);
@@ -938,60 +939,61 @@ function UnifiedNotesApp() {
           <div className="flex items-center mb-2">
             <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">MindCache</h1>
           </div>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-3">
+          
+          {/* Desktop: Show markdown explanation */}
+          <p className="hidden md:block text-sm text-gray-600 dark:text-gray-400 mb-3">
             <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">[]</span> todos • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">#tags</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">@M/D</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">**bold**</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">*italic*</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">_underline_</span> • <span className="font-mono bg-blue-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded text-xs">- bullets</span>
           </p>
           
-          {/* Mobile Markdown Toolbar - Only visible on small screens */}
-          <div className="md:hidden mb-2 flex gap-1 overflow-x-auto pb-2">
+          {/* Mobile: Show clickable toolbar buttons */}
+          <div className="md:hidden mb-3 flex gap-1.5 overflow-x-auto pb-1">
             <button
               onClick={() => insertAtCursor('[] ')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               []
             </button>
             <button
               onClick={() => insertAtCursor('#')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               #
             </button>
             <button
               onClick={() => insertAtCursor('@')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               @
             </button>
             <button
               onClick={() => insertAtCursor('**')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               **
             </button>
             <button
               onClick={() => insertAtCursor('*')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               *
             </button>
             <button
               onClick={() => insertAtCursor('_')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               _
             </button>
             <button
               onClick={() => insertAtCursor('- ')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
               -
             </button>
             <button
               onClick={() => insertAtCursor('  ')}
-              className="px-3 py-2 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap hover:bg-blue-200 dark:hover:bg-gray-600 transition-colors"
-              title="Indent (for subtasks)"
+              className="px-3 py-1.5 bg-blue-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-mono text-sm whitespace-nowrap active:bg-blue-200 dark:active:bg-gray-600 transition-colors"
             >
-              Tab
+              ⇥
             </button>
           </div>
           
@@ -1004,6 +1006,8 @@ function UnifiedNotesApp() {
                 autoResize(e.target);
               }}
               onKeyDown={handleKeyDown}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               placeholder="Write something..."
               rows={1}
               className="w-full px-4 py-3 text-gray-800 dark:text-gray-200 dark:text-gray-200 bg-white dark:bg-gray-700 border-2 border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm resize-none"
