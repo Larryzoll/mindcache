@@ -236,7 +236,8 @@ function UnifiedNotesApp() {
         tags: note.tags ? note.tags.split(',').filter(t => t) : [],
         dueDate: note.due_date,
         timestamp: note.created_at,
-        subtasks: note.subtasks ? JSON.parse(note.subtasks) : []
+        subtasks: note.subtasks ? JSON.parse(note.subtasks) : [],
+        notes: note.notes ? JSON.parse(note.notes) : []
       }));
       setItems(formattedNotes);
     }
@@ -256,7 +257,8 @@ function UnifiedNotesApp() {
         status: parsed.status,
         tags: parsed.tags.join(','),
         due_date: parsed.dueDate,
-        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null
+        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null,
+        notes: parsed.notes ? JSON.stringify(parsed.notes) : null
       }]);
     
     if (error) {
@@ -330,6 +332,27 @@ function UnifiedNotesApp() {
     }));
   };
 
+  const formatTimestamp = (timestamp) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  };
+
   const deleteItem = async (id) => {
     const { error } = await supabase
       .from('notes')
@@ -358,7 +381,8 @@ function UnifiedNotesApp() {
         status: parsed.status,
         tags: parsed.tags.join(','),
         due_date: parsed.dueDate,
-        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null
+        subtasks: parsed.subtasks ? JSON.stringify(parsed.subtasks) : null,
+        notes: parsed.notes ? JSON.stringify(parsed.notes) : null
       })
       .eq('id', id);
     
@@ -402,15 +426,16 @@ function UnifiedNotesApp() {
       displayText = mainLine.replace('[x]', '').trim();
     }
     
-    // Parse subtasks from indented lines
+    // Parse subtasks and notes from indented lines
     const subtasks = [];
+    const notes = [];
     if (isTodo && lines.length > 1) {
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
-        // Check if line is indented and starts with checkbox
-        // Match lines that start with whitespace followed by [] or [x]
-        const match = line.match(/^\s+\[(x|X| )?\]/);
-        if (match) {
+        
+        // Check for subtasks (lines with checkboxes)
+        const subtaskMatch = line.match(/^\s+\[(x|X| )?\]/);
+        if (subtaskMatch) {
           const trimmed = line.trim();
           const isSubtaskCompleted = trimmed.startsWith('[x]') || trimmed.startsWith('[X]');
           const subtaskText = trimmed.replace(/^\[(x|X| )?\]/, '').trim();
@@ -418,6 +443,18 @@ function UnifiedNotesApp() {
             subtasks.push({
               text: subtaskText,
               completed: isSubtaskCompleted
+            });
+          }
+        }
+        
+        // Check for notes (lines starting with dash)
+        const noteMatch = line.match(/^\s+-\s+(.+)/);
+        if (noteMatch) {
+          const noteText = noteMatch[1].trim();
+          if (noteText) {
+            notes.push({
+              text: noteText,
+              timestamp: new Date().toISOString()
             });
           }
         }
@@ -459,7 +496,8 @@ function UnifiedNotesApp() {
       status: isTodo ? (isCompleted ? 'completed' : 'incomplete') : null,
       tags: tags,
       dueDate: dueDate,
-      subtasks: subtasks.length > 0 ? subtasks : undefined
+      subtasks: subtasks.length > 0 ? subtasks : undefined,
+      notes: notes.length > 0 ? notes : undefined
     };
   };
 
@@ -578,6 +616,12 @@ function UnifiedNotesApp() {
           return `  ${stBracket} ${st.text}`;
         });
         fullText = fullText + '\n' + subtaskLines.join('\n');
+      }
+      
+      // Add notes if they exist
+      if (item.notes && item.notes.length > 0) {
+        const noteLines = item.notes.map(note => `  - ${note.text}`);
+        fullText = fullText + '\n' + noteLines.join('\n');
       }
     }
     setEditingText(fullText);
@@ -1160,6 +1204,22 @@ function UnifiedNotesApp() {
                       ))}
                     </div>
                   )}
+                  
+                  {/* Notes (when expanded) */}
+                  {item.type === 'todo' && item.notes && item.notes.length > 0 && expandedTodos[item.id] && (
+                    <div className="ml-12 mt-3 space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Updates:</p>
+                      {item.notes.map((note, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 flex-1">
+                            <span className="font-medium">{formatTimestamp(note.timestamp)}</span>
+                            {' - '}
+                            <span>{note.text}</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1301,6 +1361,22 @@ function UnifiedNotesApp() {
                           </button>
                           <p className={`text-sm text-red-600 dark:text-red-400 font-medium ${subtask.completed ? 'line-through opacity-50' : ''}`}>
                             {subtask.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Notes (when expanded) */}
+                  {item.type === 'todo' && item.notes && item.notes.length > 0 && expandedTodos[item.id] && (
+                    <div className="ml-12 mt-3 space-y-1">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Updates:</p>
+                      {item.notes.map((note, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 flex-1">
+                            <span className="font-medium">{formatTimestamp(note.timestamp)}</span>
+                            {' - '}
+                            <span>{note.text}</span>
                           </p>
                         </div>
                       ))}
