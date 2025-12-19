@@ -357,18 +357,59 @@ function UnifiedNotesApp() {
   };
 
   const renderNoteText = (noteText) => {
-    // Replace hashtags with styled spans
-    let processedText = noteText.replace(/#(\w+)/g, (match, tag) => {
-      const colorClass = getTagColor(tag);
-      return `<span class="${colorClass} px-2 py-0.5 rounded-md text-xs font-semibold border inline-block">${match}</span>`;
+    const parts = [];
+    let lastIndex = 0;
+    
+    // Find all hashtags and dates
+    const hashtagRegex = /#(\w+)/g;
+    const dateRegex = /@(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/]\d{1,2})/g;
+    
+    // Combine and sort all matches by position
+    const matches = [];
+    let match;
+    
+    while ((match = hashtagRegex.exec(noteText)) !== null) {
+      matches.push({ type: 'tag', text: match[0], tag: match[1], index: match.index });
+    }
+    
+    while ((match = dateRegex.exec(noteText)) !== null) {
+      matches.push({ type: 'date', text: match[0], index: match.index });
+    }
+    
+    matches.sort((a, b) => a.index - b.index);
+    
+    // Build parts array
+    matches.forEach((match, i) => {
+      // Add text before this match
+      if (match.index > lastIndex) {
+        parts.push(noteText.substring(lastIndex, match.index));
+      }
+      
+      // Add styled match
+      if (match.type === 'tag') {
+        const colorClass = getTagColor(match.tag);
+        parts.push(
+          <span key={`tag-${i}`} className={`${colorClass} px-2 py-0.5 rounded-md text-xs font-semibold border inline-block mr-1`}>
+            {match.text}
+          </span>
+        );
+      } else if (match.type === 'date') {
+        parts.push(
+          <span key={`date-${i}`} className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md text-xs font-semibold inline-block mr-1">
+            {match.text}
+          </span>
+        );
+      }
+      
+      lastIndex = match.index + match.text.length;
     });
     
-    // Replace dates with styled spans
-    processedText = processedText.replace(/@(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/]\d{1,2})/g, (match) => {
-      return `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md text-xs font-semibold inline-block">${match}</span>`;
-    });
+    // Add remaining text
+    if (lastIndex < noteText.length) {
+      parts.push(noteText.substring(lastIndex));
+    }
     
-    return <span dangerouslySetInnerHTML={{ __html: processedText }} />;
+    return <>{parts}</>;
   };
 
   const deleteItem = async (id) => {
