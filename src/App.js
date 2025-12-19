@@ -159,6 +159,7 @@ function UnifiedNotesApp() {
   const [customTagColors, setCustomTagColors] = useState({});
   const [editingTagColor, setEditingTagColor] = useState(null); // Will store unique key like "tagName-keyPrefix-index"
   const inputRef = useRef(null);
+  const editTextareaRef = useRef(null);
 
   const tagColors = [
     'text-blue-600 bg-blue-50 border-blue-200',
@@ -681,6 +682,25 @@ function UnifiedNotesApp() {
       const newCursorPos = hashIndex + tag.length + 2;
       inputRef.current.focus();
       inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const insertEditTag = (tag) => {
+    if (!editTextareaRef.current) return;
+    
+    const cursorPos = editTextareaRef.current.selectionStart;
+    const textBeforeCursor = editingText.slice(0, cursorPos);
+    const textAfterCursor = editingText.slice(cursorPos);
+    const hashIndex = textBeforeCursor.lastIndexOf('#');
+    
+    const newText = textBeforeCursor.slice(0, hashIndex + 1) + tag + ' ' + textAfterCursor;
+    setEditingText(newText);
+    setShowEditAutocomplete(false);
+    
+    setTimeout(() => {
+      const newCursorPos = hashIndex + tag.length + 2;
+      editTextareaRef.current.focus();
+      editTextareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
     }, 0);
   };
 
@@ -1255,25 +1275,64 @@ function UnifiedNotesApp() {
                     {/* Main content */}
                     <div className="flex-1 min-w-0">
                       {editingItemId === item.id ? (
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => {
-                            setEditingText(e.target.value);
-                            autoResize(e.target);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              saveEditedItem(item.id);
-                            } else if (e.key === 'Escape') {
-                              cancelEditingItem();
-                            }
-                          }}
-                          className="w-full px-4 py-2 border-2 border-blue-500 dark:border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-gray-700 dark:text-gray-200"
-                          autoFocus
-                          rows={item.subtasks && item.subtasks.length > 0 ? item.subtasks.length + 1 : 1}
-                          style={{ minHeight: '40px' }}
-                        />
+                        <div className="relative">
+                          <textarea
+                            ref={editTextareaRef}
+                            value={editingText}
+                            onChange={(e) => handleEditChange(e)}
+                            onKeyDown={(e) => {
+                              if (showEditAutocomplete) {
+                                if (e.key === 'ArrowDown') {
+                                  e.preventDefault();
+                                  setSelectedEditAutocomplete(prev =>
+                                    prev < editAutocompleteOptions.length - 1 ? prev + 1 : prev
+                                  );
+                                } else if (e.key === 'ArrowUp') {
+                                  e.preventDefault();
+                                  setSelectedEditAutocomplete(prev => prev > 0 ? prev - 1 : 0);
+                                } else if (e.key === 'Tab' || (e.key === 'Enter' && showEditAutocomplete)) {
+                                  if (editAutocompleteOptions.length > 0) {
+                                    e.preventDefault();
+                                    insertEditTag(editAutocompleteOptions[selectedEditAutocomplete]);
+                                    return;
+                                  }
+                                } else if (e.key === 'Escape') {
+                                  setShowEditAutocomplete(false);
+                                  return;
+                                }
+                              }
+                              
+                              if (e.key === 'Enter' && !e.shiftKey && !showEditAutocomplete) {
+                                e.preventDefault();
+                                saveEditedItem(item.id);
+                              } else if (e.key === 'Escape' && !showEditAutocomplete) {
+                                cancelEditingItem();
+                              }
+                            }}
+                            className="w-full px-4 py-2 border-2 border-blue-500 dark:border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none dark:bg-gray-700 dark:text-gray-200"
+                            autoFocus
+                            rows={item.subtasks && item.subtasks.length > 0 ? item.subtasks.length + 1 : 1}
+                            style={{ minHeight: '40px' }}
+                          />
+                          {showEditAutocomplete && editAutocompleteOptions.length > 0 && (
+                            <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-slate-300 dark:border-gray-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                              {editAutocompleteOptions.map((tag, index) => {
+                                const tagColor = getTagColor(tag);
+                                return (
+                                  <div
+                                    key={tag}
+                                    onClick={() => insertEditTag(tag)}
+                                    className={`px-4 py-2 cursor-pointer ${index === selectedEditAutocomplete ? 'bg-blue-50 dark:bg-gray-700' : 'hover:bg-slate-50 dark:hover:bg-gray-700'}`}
+                                  >
+                                    <span className={`${tagColor} px-2.5 py-1 rounded-lg font-semibold text-sm border`}>
+                                      #{tag}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <>
                           <p className={`text-base leading-relaxed ${item.type === 'todo' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-800 dark:text-gray-200'} ${item.status === 'completed' ? 'line-through opacity-40' : ''}`}>
