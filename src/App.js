@@ -1090,8 +1090,8 @@ function UnifiedNotesApp() {
               {items.map(item => (
                 <div key={item.id} className="flex flex-col">
                   <div className="flex items-start gap-3 p-3 hover:bg-slate-50 dark:hover:bg-gray-700 rounded-lg group border border-transparent hover:border-slate-200 dark:hover:border-gray-600">
-                    {/* Expand/Collapse for todos with subtasks */}
-                    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                    {/* Expand/Collapse for todos with subtasks or notes */}
+                    {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
                       <button 
                         onClick={() => toggleExpanded(item.id)} 
                         className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
@@ -1149,7 +1149,7 @@ function UnifiedNotesApp() {
                           </p>
                           
                           {/* Subtask progress */}
-                          {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                          {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
                             </div>
@@ -1183,7 +1183,7 @@ function UnifiedNotesApp() {
                   </div>
                   
                   {/* Subtasks (when expanded) */}
-                  {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
+                  {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && expandedTodos[item.id] && (
                     <div className="ml-12 space-y-1 mt-1">
                       {item.subtasks.map((subtask, index) => (
                         <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
@@ -1299,8 +1299,8 @@ function UnifiedNotesApp() {
               {getFilteredItems().map(item => (
                 <div key={item.id} className="flex flex-col">
                   <div className="flex items-start gap-3 p-4 bg-white/80 dark:bg-gray-800/80 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-                    {/* Expand/Collapse for todos with subtasks */}
-                    {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                    {/* Expand/Collapse for todos with subtasks or notes */}
+                    {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
                       <button 
                         onClick={() => toggleExpanded(item.id)} 
                         className="mt-1 flex-shrink-0 hover:scale-110 transition-transform"
@@ -1336,7 +1336,7 @@ function UnifiedNotesApp() {
                       </p>
                       
                       {/* Subtask progress */}
-                      {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
+                      {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
                         </div>
@@ -1345,7 +1345,7 @@ function UnifiedNotesApp() {
                   </div>
                   
                   {/* Subtasks (when expanded) */}
-                  {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && expandedTodos[item.id] && (
+                  {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && expandedTodos[item.id] && (
                     <div className="ml-12 space-y-1 mt-1">
                       {item.subtasks.map((subtask, index) => (
                         <div key={index} className="flex items-start gap-2 p-2 hover:bg-slate-50 dark:hover:bg-gray-700/50 rounded group">
