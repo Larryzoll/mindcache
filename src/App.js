@@ -371,7 +371,8 @@ function UnifiedNotesApp() {
   };
 
   const saveEditedItem = async (id) => {
-    const parsed = parseItem(editingText);
+    const existingItem = items.find(i => i.id === id);
+    const parsed = parseItem(editingText, existingItem);
     
     const { error } = await supabase
       .from('notes')
@@ -412,7 +413,7 @@ function UnifiedNotesApp() {
       console.error('Error saving tag colors:', error);
     }
   };
-  const parseItem = (text) => {
+  const parseItem = (text, existingItem = null) => {
     const lines = text.split('\n');
     const mainLine = lines[0];
     
@@ -452,9 +453,11 @@ function UnifiedNotesApp() {
         if (noteMatch) {
           const noteText = noteMatch[1].trim();
           if (noteText) {
+            // Try to find matching existing note by text to preserve timestamp
+            const existingNote = existingItem?.notes?.find(n => n.text === noteText);
             notes.push({
               text: noteText,
-              timestamp: new Date().toISOString()
+              timestamp: existingNote ? existingNote.timestamp : new Date().toISOString()
             });
           }
         }
@@ -1149,7 +1152,7 @@ function UnifiedNotesApp() {
                           </p>
                           
                           {/* Subtask progress */}
-                          {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
+                          {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
                             </div>
@@ -1336,7 +1339,7 @@ function UnifiedNotesApp() {
                       </p>
                       
                       {/* Subtask progress */}
-                      {item.type === 'todo' && ((item.subtasks && item.subtasks.length > 0) || (item.notes && item.notes.length > 0)) && (
+                      {item.type === 'todo' && item.subtasks && item.subtasks.length > 0 && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {item.subtasks.filter(st => st.completed).length}/{item.subtasks.length} complete
                         </div>
