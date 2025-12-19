@@ -489,6 +489,7 @@ function UnifiedNotesApp() {
     // Parse subtasks and notes from indented lines
     const subtasks = [];
     const notes = [];
+    const tags = [];  // Initialize tags array here
     if (isTodo && lines.length > 1) {
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
