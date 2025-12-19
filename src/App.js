@@ -642,17 +642,13 @@ function UnifiedNotesApp() {
     const textBeforeCursor = value.slice(0, cursorPos);
     const hashIndex = textBeforeCursor.lastIndexOf('#');
     
-    console.log('handleEditChange:', { hashIndex, textBeforeCursor, cursorPos });
-    
     if (hashIndex !== -1) {
       const textAfterHash = textBeforeCursor.slice(hashIndex + 1);
-      console.log('textAfterHash:', textAfterHash);
       if (!textAfterHash.includes(' ') && textAfterHash.length > 0) {
         const allTags = getAllTags();
         const matches = allTags.filter(tag => 
           tag.toLowerCase().startsWith(textAfterHash.toLowerCase())
         );
-        console.log('matches:', matches);
         if (matches.length > 0) {
           setEditAutocompleteOptions(matches);
           setShowEditAutocomplete(true);
@@ -661,7 +657,6 @@ function UnifiedNotesApp() {
           setShowEditAutocomplete(false);
         }
       } else if (textAfterHash.length === 0) {
-        console.log('Showing all tags');
         setEditAutocompleteOptions(getAllTags());
         setShowEditAutocomplete(true);
         setSelectedEditAutocomplete(0);
