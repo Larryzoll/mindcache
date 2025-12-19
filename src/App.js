@@ -151,6 +151,9 @@ function UnifiedNotesApp() {
   const [selectedAutocomplete, setSelectedAutocomplete] = useState(0);
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [editAutocompleteOptions, setEditAutocompleteOptions] = useState([]);
+  const [showEditAutocomplete, setShowEditAutocomplete] = useState(false);
+  const [selectedEditAutocomplete, setSelectedEditAutocomplete] = useState(0);
   const [activePane, setActivePane] = useState('notes');
   const [loading, setLoading] = useState(true);
   const [customTagColors, setCustomTagColors] = useState({});
@@ -353,6 +356,21 @@ function UnifiedNotesApp() {
     });
   };
 
+  const renderNoteText = (noteText) => {
+    // Replace hashtags with styled spans
+    let processedText = noteText.replace(/#(\w+)/g, (match, tag) => {
+      const colorClass = getTagColor(tag);
+      return `<span class="${colorClass} px-2 py-0.5 rounded-md text-xs font-semibold border inline-block">${match}</span>`;
+    });
+    
+    // Replace dates with styled spans
+    processedText = processedText.replace(/@(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/]\d{1,2})/g, (match) => {
+      return `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md text-xs font-semibold inline-block">${match}</span>`;
+    });
+    
+    return <span dangerouslySetInnerHTML={{ __html: processedText }} />;
+  };
+
   const deleteItem = async (id) => {
     const { error } = await supabase
       .from('notes')
@@ -451,13 +469,47 @@ function UnifiedNotesApp() {
         // Check for notes (lines starting with dash)
         const noteMatch = line.match(/^\s+-\s+(.+)/);
         if (noteMatch) {
-          const noteText = noteMatch[1].trim();
+          let noteText = noteMatch[1].trim();
+          
+          // Extract tags from note
+          const noteTagRegex = /#(\w+)/g;
+          const noteTags = [...noteText.matchAll(noteTagRegex)].map(match => match[1]);
+          tags.push(...noteTags);
+          
+          // Extract date from note
+          const noteDateRegex = /@(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/]\d{1,2})/;
+          const noteDateMatch = noteText.match(noteDateRegex);
+          let noteDate = null;
+          
+          if (noteDateMatch) {
+            const dateStr = noteDateMatch[1];
+            const parts = dateStr.split(/[-/]/);
+            
+            if (parts.length === 2) {
+              const currentYear = new Date().getFullYear();
+              const month = parts[0].padStart(2, '0');
+              const day = parts[1].padStart(2, '0');
+              noteDate = `${currentYear}-${month}-${day}`;
+            } else if (parts.length === 3) {
+              const month = parts[0].padStart(2, '0');
+              const day = parts[1].padStart(2, '0');
+              let year = parts[2];
+              if (year.length === 2) {
+                const currentYear = new Date().getFullYear();
+                const currentCentury = Math.floor(currentYear / 100) * 100;
+                year = currentCentury + parseInt(year);
+              }
+              noteDate = `${year}-${month}-${day}`;
+            }
+          }
+          
           if (noteText) {
             // Try to find matching existing note by text to preserve timestamp
             const existingNote = existingItem?.notes?.find(n => n.text === noteText);
             notes.push({
               text: noteText,
-              timestamp: existingNote ? existingNote.timestamp : new Date().toISOString()
+              timestamp: existingNote ? existingNote.timestamp : new Date().toISOString(),
+              date: noteDate
             });
           }
         }
@@ -465,7 +517,7 @@ function UnifiedNotesApp() {
     }
     
     const tagRegex = /#(\w+)/g;
-    const tags = [...displayText.matchAll(tagRegex)].map(match => match[1]);
+    tags.push(...[...displayText.matchAll(tagRegex)].map(match => match[1]));
     
     const dueDateRegex = /@(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/]\d{1,2})/;
     const dueDateMatch = displayText.match(dueDateRegex);
@@ -535,6 +587,41 @@ function UnifiedNotesApp() {
       }
     } else {
       setShowAutocomplete(false);
+    }
+  };
+
+  const handleEditChange = (e, textareaRef) => {
+    const value = e.target.value;
+    setEditingText(value);
+    autoResize(e.target);
+
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const hashIndex = textBeforeCursor.lastIndexOf('#');
+    
+    if (hashIndex !== -1) {
+      const textAfterHash = textBeforeCursor.slice(hashIndex + 1);
+      if (!textAfterHash.includes(' ') && textAfterHash.length > 0) {
+        const allTags = getAllTags();
+        const matches = allTags.filter(tag => 
+          tag.toLowerCase().startsWith(textAfterHash.toLowerCase())
+        );
+        if (matches.length > 0) {
+          setEditAutocompleteOptions(matches);
+          setShowEditAutocomplete(true);
+          setSelectedEditAutocomplete(0);
+        } else {
+          setShowEditAutocomplete(false);
+        }
+      } else if (textAfterHash.length === 0) {
+        setEditAutocompleteOptions(getAllTags());
+        setShowEditAutocomplete(true);
+        setSelectedEditAutocomplete(0);
+      } else {
+        setShowEditAutocomplete(false);
+      }
+    } else {
+      setShowEditAutocomplete(false);
     }
   };
 
@@ -1217,7 +1304,7 @@ function UnifiedNotesApp() {
                           <p className="text-xs text-gray-600 dark:text-gray-400 flex-1">
                             <span className="font-medium">{formatTimestamp(note.timestamp)}</span>
                             {' - '}
-                            <span>{note.text}</span>
+                            {renderNoteText(note.text)}
                           </p>
                         </div>
                       ))}
@@ -1379,7 +1466,7 @@ function UnifiedNotesApp() {
                           <p className="text-xs text-gray-600 dark:text-gray-400 flex-1">
                             <span className="font-medium">{formatTimestamp(note.timestamp)}</span>
                             {' - '}
-                            <span>{note.text}</span>
+                            {renderNoteText(note.text)}
                           </p>
                         </div>
                       ))}
